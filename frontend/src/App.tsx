@@ -65,23 +65,27 @@ export default function CustomerContractForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    const API_BASE =
+      import.meta.env.VITE_API_URL ?? "http://localhost:5000"; // dev fallback
+
     try {
-      const response = await fetch("http://localhost:5000/predict", {
+      const res = await fetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           Contract: formData.contract,
           PaperlessBilling: formData.paperlessBilling,
-          tenure: formData.tenure,
+          tenure: Number(formData.tenure),   // send as number
           PaymentMethod: formData.paymentMethod,
-          Gender: formData.gender,   // NEW
-          Age: formData.age,         // NEW
+          Gender: formData.gender,
+          Age: Number(formData.age),         // send as number
         }),
       });
-      const result = await response.json();
+      const result = await res.json();
       if (result.error) {
         console.error("Prediction Error:", result.error);
-        alert("Something went wrong: " + result.error);
+        alert(result.error);
       } else {
         setChurnPrediction({
           isLikelyToChurn: result.prediction === 1,
@@ -89,8 +93,8 @@ export default function CustomerContractForm() {
         });
         setIsSubmitted(true);
       }
-    } catch (error) {
-      console.error("API Error:", error);
+    } catch (err) {
+      console.error("API Error:", err);
       alert("API request failed.");
     } finally {
       setIsLoading(false);
