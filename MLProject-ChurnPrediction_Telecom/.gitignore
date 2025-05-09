@@ -1,0 +1,34 @@
+# ─ Python byte-code & caches ───────────────────────────────
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+
+# ─ Virtual environments ───────────────────────────────────
+env/
+venv/
+.venv/
+
+# ─ Jupyter autosave folders ───────────────────────────────
+.ipynb_checkpoints/
+
+# ─ IDE / editor junk ──────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─ Logs / temp files ──────────────────────────────────────
+*.log
+*.tmp
+
+# ─ Secrets (store in Render env vars, not in Git) ─────────
+.env
+
+# ─ Large raw datasets you don’t need in prod ──────────────
+WA_Fn-UseC_-Telco-Customer-Churn.csv
+
+# ─ If you IGNORE all .sav but still keep model.sav ────────
+# *.sav
+# !model.sav
