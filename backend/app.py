@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pandas as pd
 import pickle
-import os                                   # ← added
+import os
+import pathlib
 
 app = Flask(__name__)
 CORS(app)
@@ -15,13 +16,32 @@ model, model_columns = pickle.load(open("model.sav", "rb"))
 # Tenure-bin labels (same as training)
 tenure_labels = [f"{i} - {i + 11}" for i in range(1, 72, 12)]
 
+# ───────────────────────────────────────────
+# Health / info endpoints
+# ───────────────────────────────────────────
+@app.route("/", methods=["GET", "HEAD"])
+def index():
+    """Return 200 OK so Render’s health-check (and browsers) don’t log 404s."""
+    return jsonify({
+        "status": "ok",
+        "message": "Telecom-churn prediction API",
+        "endpoints": ["/predict"]
+    })
 
+# Optional: serve a blank favicon to stop 404 spam
+@app.route("/favicon.ico")
+def favicon():
+    return ("", 204)
+
+# ───────────────────────────────────────────
+# Main prediction endpoint
+# ───────────────────────────────────────────
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
 
-        # ───── Extract incoming values ─────
+        # Extract incoming values
         contract       = data.get("Contract")
         paperless      = data.get("PaperlessBilling")
         payment_method = data.get("PaymentMethod")
@@ -29,10 +49,9 @@ def predict():
         gender         = data.get("Gender")
         age            = int(data.get("Age"))
 
-        # SeniorCitizen flag
         senior = 1 if age >= 60 else 0
 
-        # ───── Build a single-row DataFrame ─────
+        # Build a single-row DataFrame
         new_df = pd.DataFrame([{
             "Contract":        contract,
             "PaperlessBilling": paperless,
@@ -48,7 +67,7 @@ def predict():
         )
         new_df.drop(columns=["tenure"], inplace=True)
 
-        # One-hot encode & align columns
+        # One-hot encode and align features
         final_df = pd.get_dummies(new_df)
         X_input  = final_df.reindex(columns=model_columns, fill_value=0)
 
@@ -70,5 +89,5 @@ def predict():
 # Entry-point - bind to 0.0.0.0:$PORT for Render
 # ───────────────────────────────────────────
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))   # Render provides PORT
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
