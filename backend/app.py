@@ -2,13 +2,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import pickle
+import os                                   # ← added
 
 app = Flask(__name__)
 CORS(app)
 
-# ────────────────────────────────────────────────────────────
-# Load the trained model + the feature columns used at train-time
-# ────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────
+# Load trained model + feature columns
+# ───────────────────────────────────────────
 model, model_columns = pickle.load(open("model.sav", "rb"))
 
 # Tenure-bin labels (same as training)
@@ -21,51 +22,53 @@ def predict():
         data = request.get_json()
 
         # ───── Extract incoming values ─────
-        contract         = data.get("Contract")          # str
-        paperless        = data.get("PaperlessBilling")  # "Yes"/"No"
-        payment_method   = data.get("PaymentMethod")     # str
-        tenure           = int(data.get("tenure"))       # months
-        gender           = data.get("Gender")            # "Male"/"Female"
-        age              = int(data.get("Age"))          # years
+        contract       = data.get("Contract")
+        paperless      = data.get("PaperlessBilling")
+        payment_method = data.get("PaymentMethod")
+        tenure         = int(data.get("tenure"))
+        gender         = data.get("Gender")
+        age            = int(data.get("Age"))
 
-        # Derive SeniorCitizen flag from age (≥60 ⇒ 1)
+        # SeniorCitizen flag
         senior = 1 if age >= 60 else 0
 
-        # ───── Build a one-row DataFrame ─────
+        # ───── Build a single-row DataFrame ─────
         new_df = pd.DataFrame([{
             "Contract":        contract,
             "PaperlessBilling": paperless,
             "PaymentMethod":    payment_method,
             "tenure":           tenure,
-            "gender":           gender,        # NEW
-            "SeniorCitizen":    senior         # NEW
+            "gender":           gender,
+            "SeniorCitizen":    senior
         }])
 
-        # Convert tenure -> tenure_group (used during training)
+        # tenure → tenure_group
         new_df["tenure_group"] = pd.cut(
             new_df.tenure, range(1, 80, 12), right=False, labels=tenure_labels
         )
         new_df.drop(columns=["tenure"], inplace=True)
 
-        # ───── One-hot encode categorical features ─────
+        # One-hot encode & align columns
         final_df = pd.get_dummies(new_df)
+        X_input  = final_df.reindex(columns=model_columns, fill_value=0)
 
-        # Align columns with training set (fill missing with 0)
-        X_input = final_df.reindex(columns=model_columns, fill_value=0)
-
-        # ───── Predict ─────
-        pred        = model.predict(X_input)[0]
-        confidence  = model.predict_proba(X_input)[0][1]   # probability of class 1
+        # Predict
+        pred       = model.predict(X_input)[0]
+        confidence = model.predict_proba(X_input)[0][1]
 
         return jsonify({
-            "prediction":  int(pred),
-            "confidence":  round(confidence * 100, 2),
-            "message":     "Likely to churn" if pred == 1 else "Likely to stay"
+            "prediction": int(pred),
+            "confidence": round(confidence * 100, 2),
+            "message": "Likely to churn" if pred == 1 else "Likely to stay"
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
+# ───────────────────────────────────────────
+# Entry-point - bind to 0.0.0.0:$PORT for Render
+# ───────────────────────────────────────────
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))   # Render provides PORT
+    app.run(host="0.0.0.0", port=port, debug=True)
