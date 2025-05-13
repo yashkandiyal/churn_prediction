@@ -14,8 +14,8 @@ type FormData = {
   paperlessBilling: string;
   paymentMethod: string;
   tenure: string;
-  gender: string;   // NEW
-  age: string;      // NEW
+  gender: string;   
+  age: string;      
 };
 
 type ChurnPrediction = {
@@ -29,8 +29,8 @@ export default function CustomerContractForm() {
     paperlessBilling: "No",
     paymentMethod: "Electronic check",
     tenure: "2",
-    gender: "Male",   // NEW
-    age: "30",        // NEW
+    gender: "Male",  
+    age: "30",        
   });
 
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -40,7 +40,7 @@ export default function CustomerContractForm() {
   const [activeField, setActiveField] = useState<string | null>(null);
   const [fadeIn, setFadeIn] = useState(false);
 
-  /* ---------- animated background hue ---------- */
+
   useEffect(() => {
     setFadeIn(true);
     document.documentElement.style.setProperty("--hue", "220");
@@ -76,10 +76,10 @@ export default function CustomerContractForm() {
         body: JSON.stringify({
           Contract: formData.contract,
           PaperlessBilling: formData.paperlessBilling,
-          tenure: Number(formData.tenure),   // send as number
+          tenure: Number(formData.tenure),  
           PaymentMethod: formData.paymentMethod,
           Gender: formData.gender,
-          Age: Number(formData.age),         // send as number
+          Age: Number(formData.age),        
         }),
       });
       const result = await res.json();
@@ -110,7 +110,7 @@ export default function CustomerContractForm() {
     "Bank transfer",
     "Credit card",
   ];
-  const genderOptions = ["Male", "Female"]; // NEW
+  const genderOptions = ["Male", "Female"]; 
 
   const getIcon = (name: string) => {
     switch (name) {
@@ -159,7 +159,7 @@ export default function CustomerContractForm() {
           "hsl(calc(var(--hue,220) + 60), 70%, 20%))",
       }}
     >
-      {/* background blobs (unchanged) */}
+      
       <div className="absolute inset-0 overflow-hidden opacity-10">
         <div
           className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
